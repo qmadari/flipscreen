@@ -24,7 +24,7 @@ def capture():
 
     print('capture started')
     serialPort = serial.Serial(
-        port=getComPort("Silicon Labs"), baudrate=57600*2, bytesize=8, timeout=1, stopbits=serial.STOPBITS_ONE, parity='N'
+        port=getComPort("Silicon Labs"), baudrate=57600*2, bytesize=8, timeout=10, stopbits=serial.STOPBITS_ONE, parity='N'
     )
     serialString = ""  # Used to hold data coming over UART
     while 1:
