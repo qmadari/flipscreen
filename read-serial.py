@@ -1,6 +1,8 @@
 import serial
 import subprocess,json
 from datetime import datetime
+import logging
+import os, sys
 
 def getComPort(deviceName:str):
     powershellCmdPart1 = "PowerShell -Command \"& {Get-PnpDevice | " 
@@ -13,7 +15,7 @@ def getComPort(deviceName:str):
     return json.loads(subprocess.getoutput(powershellCmd))['FriendlyName'].split('(')[-1].rstrip(')')
 
 
-def capture():
+def capture(logger):
     # Create the output file
         # current_datetime = str(datetime.now().strftime("%Y%m%d-%H%M%S"))
         # file_name = current_datetime+".txt"
@@ -30,13 +32,30 @@ def capture():
     while 1:
         serialString =serialPort.readline()
         try:
-            print(serialString.decode('ascii'))
+            #print(serialString.decode('ascii'))
+            logger.info(f"{serialString.decode('ascii')}")
         except:
             pass
     
 
 
 if __name__ == "__main__":
-    capture()
+    curdate = datetime.today().strftime('%Y-%m-%d-%H-%M-%S')
+    logfolder = f"{os.environ['userprofile']}\\Desktop\\"
+    logfilenm = f"{curdate}.log"
+    logpath = f"{logfolder}{logfilenm}"
+
+    loglevel = logging.INFO
+    logformat = f"%(asctime)s - %(message)s"
+    stdout_handler = logging.StreamHandler(stream=sys.stdout) # Writes to terminal too, not just logfile
+    file_handler = logging.FileHandler(filename=logpath)
+    handlers = [file_handler, stdout_handler]
+
+
+    logging.basicConfig(encoding='utf-8', level = loglevel, format=logformat, datefmt='%m/%d/%Y %I:%M:%S %p',handlers=handlers)
+    
+    logger = logging.getLogger('curdate')
+
+    capture(logger)
 
 
