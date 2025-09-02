@@ -61,6 +61,7 @@ define inline_script new_inline_script
 	import subprocess,json
 	import time
 	
+	    
 	def getComPort(deviceName:str):
 	    powershellCmdPart1 = "PowerShell -Command \"& {Get-PnpDevice | " 
 	    powershellCmdPart2 = "Where-Object {$_.FriendlyName -Like '*(COM*'} | Where-Object {$_.Status -Like '*OK*'} | " 
@@ -99,6 +100,9 @@ define inline_script new_inline_script
 	n_cycles = 2000
 	
 	
+	## Keyboard 
+	keyboard_exit_shortcut = Keyboard(keylist=['q'], timeout=1)
+	
 	for i in range(n_cycles):
 	    canvas1.show()
 	    
@@ -108,6 +112,10 @@ define inline_script new_inline_script
 	    canvas2.show()
 	    
 	    time.sleep(0.5)
+	    
+	    key, end_time = keyboard_exit_shortcut.get_key()
+	    if key in ['q']:
+	        exp.quit()
 	
 	print("Detected Frame Rate:", win.getActualFrameRate())
 	__end__
