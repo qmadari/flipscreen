@@ -1,0 +1,122 @@
+---
+API: 3
+OpenSesame: 4.0.24
+Platform: nt
+---
+set width 1920
+set title "New experiment"
+set subject_parity even
+set subject_nr 0
+set start experiment
+set sound_sample_size -16
+set sound_freq 48000
+set sound_channels 2
+set sound_buf_size 1024
+set sampler_backend psycho
+set round_decimals 2
+set psychopy_waitblanking yes
+set mouse_backend psycho
+set keyboard_backend psycho
+set height 1080
+set fullscreen no
+set form_clicks no
+set foreground white
+set font_underline no
+set font_size 18
+set font_italic False
+set font_family mono
+set font_bold False
+set expyriment_opengl yes
+set experiment_path "C:/Users/CemreProject/Desktop/flipscreen"
+set disable_garbage_collection False
+set description "The main experiment item"
+set color_backend psycho
+set clock_backend psycho
+set canvas_backend psycho
+set background "#3d3846"
+
+define sequence experiment
+	set flush_keyboard yes
+	set description "Runs a number of items in sequence"
+	run new_inline_script True
+
+define notepad getting_started
+	__note__
+	Welcome to OpenSesame 4.0 "Melodramatic Milgram"!
+	If you are new to OpenSesame, it is a good idea to follow one of the tutorials,
+	which can be found on the documentation site:
+	- <http://osdoc.cogsci.nl/>
+	You can also check out the examples. These can be opened via:
+	- Menu -> Tools -> Example experiments.
+	And feel free to ask for help on the forum:
+	- <http://forum.cogsci.nl/>
+	Have fun with OpenSesame!
+	__end__
+	set description "A simple notepad to document your experiment. This plug-in does nothing."
+
+define inline_script new_inline_script
+	set description "Executes Python code"
+	___run__
+	import serial
+	import subprocess,json
+	import time
+	
+	def getComPort(deviceName:str):
+	    powershellCmdPart1 = "PowerShell -Command \"& {Get-PnpDevice | " 
+	    powershellCmdPart2 = "Where-Object {$_.FriendlyName -Like '*(COM*'} | Where-Object {$_.Status -Like '*OK*'} | " 
+	    powershellCmdPart3 = "Where-Object {$_.FriendlyName -Like '*" + deviceName + "*'} | " 
+	    #powershellCmdPart4 = "Where-Object {$_.PNPDeviceID -Like '*PID_6015*'} | " 
+	    powershellCmdPart5 = "Select-Object FriendlyName | ConvertTo-Json}\""
+	    powershellCmd = powershellCmdPart1 + powershellCmdPart2 + powershellCmdPart3 + powershellCmdPart5
+	    # return subprocess.getoutput(powershellCmd)
+	    return json.loads(subprocess.getoutput(powershellCmd))['FriendlyName'].split('(')[-1].rstrip(')')
+	
+	
+	def sendTrigger(trigVal:int = 1):
+	    io_eeg.close()
+	    io_eeg.open()
+	    triggerint = trigVal
+	    io_eeg.write(triggerint.to_bytes(1,'little'))
+	    io_eeg.close() # make sure you close the port, otherwise the next user gets an error. 
+	
+	io_eeg = serial.Serial(
+	    port=getComPort('USB Serial Port'),
+	    baudrate=115200,
+	    parity=serial.PARITY_NONE,
+	    stopbits=serial.STOPBITS_ONE,
+	    bytesize=serial.EIGHTBITS
+	)
+	
+	win = exp.window
+	
+	canvas1 = Canvas()
+	canvas1.rect(-960, -540, 1920, 1080, fill=True, color = 'black')
+	
+	canvas2 = Canvas()
+	canvas2.rect(-960, -540, 1920, 1080, fill=True, color = 'white')
+	
+	timing = 3
+	n_cycles = 2000
+	
+	
+	for i in range(n_cycles):
+	    canvas1.show()
+	    
+	    time.sleep(2)
+	    
+	    sendTrigger()
+	    canvas2.show()
+	    
+	    time.sleep(0.5)
+	
+	print("Detected Frame Rate:", win.getActualFrameRate())
+	__end__
+	set _prepare ""
+
+define sketchpad welcome
+	set start_response_interval no
+	set reset_variables no
+	set duration keypress
+	set description "Displays stimuli"
+	draw textline center=1 color=white font_bold=no font_family=serif font_italic=no font_size=32 html=yes show_if=True text="OpenSesame 4.0 <i>Melodramatic Milgram</i>" x=0 y=0 z_index=0
+
