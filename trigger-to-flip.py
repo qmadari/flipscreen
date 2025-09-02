@@ -36,7 +36,8 @@ def capture(logger):
             devout = serialString.decode('ascii')
             trigger2flip = devout.split('#')[1].split(' ')[2]
             #logger.info(f"{serialString.decode('ascii')}")
-            logger.info(f"{trigger2flip}")
+            if trigger2flip.__contains__('rA2rB'):
+                logger.info(f"{trigger2flip}")
         except:
             pass
     

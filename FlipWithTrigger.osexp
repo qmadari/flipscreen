@@ -114,10 +114,15 @@ define inline_script new_inline_script
 	    
 	    time.sleep(2)
 	    
+	    pretime = time.time()
 	    triggerOnly()
+	    aftertrigtime = time.time()
 	    canvas2.show()
-	    
+	    aftercanvastime = time.time()
 	    time.sleep(0.5)
+	    
+	    print(f'aftertrigtime - pretime = {aftertrigtime - pretime}')
+	    print(f'aftercanvastime - pretime = {aftercanvastime - pretime}')
 	    
 	    key, end_time = keyboard_exit_shortcut.get_key()
 	    if key in ['q']:
