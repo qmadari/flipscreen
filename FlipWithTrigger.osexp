@@ -121,8 +121,8 @@ define inline_script new_inline_script
 	    aftercanvastime = time.time()
 	    time.sleep(0.5)
 	    
-	    print(f'aftertrigtime - pretime = {aftertrigtime - pretime}')
-	    print(f'aftercanvastime - pretime = {aftercanvastime - pretime}')
+	    print(f'aftertrigtime - pretime = {aftertrigtime * 1000 - pretime * 1000}')
+	    print(f'aftercanvastime - pretime = {aftercanvastime * 1000 - pretime * 1000}')
 	    
 	    key, end_time = keyboard_exit_shortcut.get_key()
 	    if key in ['q']:
