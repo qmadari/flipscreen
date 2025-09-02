@@ -80,6 +80,9 @@ define inline_script new_inline_script
 	    io_eeg.write(triggerint.to_bytes(1,'little'))
 	    io_eeg.close() # make sure you close the port, otherwise the next user gets an error. 
 	
+	def triggerOnly(trigVal:int = 1):
+	    io_eeg.write(trigVal.to_bytes(1,'little'))
+	
 	io_eeg = serial.Serial(
 	    port=getComPort('USB Serial Port'),
 	    baudrate=115200,
@@ -103,12 +106,15 @@ define inline_script new_inline_script
 	## Keyboard 
 	keyboard_exit_shortcut = Keyboard(keylist=['q'], timeout=1)
 	
+	io_eeg.close()
+	io_eeg.open()
+	
 	for i in range(n_cycles):
 	    canvas1.show()
 	    
 	    time.sleep(2)
 	    
-	    sendTrigger()
+	    triggerOnly()
 	    canvas2.show()
 	    
 	    time.sleep(0.5)
@@ -116,6 +122,9 @@ define inline_script new_inline_script
 	    key, end_time = keyboard_exit_shortcut.get_key()
 	    if key in ['q']:
 	        break
+	
+	
+	io_eeg.close() 
 	
 	print("Detected Frame Rate:", win.getActualFrameRate())
 	__end__
