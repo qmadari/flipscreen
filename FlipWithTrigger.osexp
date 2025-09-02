@@ -115,7 +115,7 @@ define inline_script new_inline_script
 	    
 	    key, end_time = keyboard_exit_shortcut.get_key()
 	    if key in ['q']:
-	        exp.quit()
+	        break
 	
 	print("Detected Frame Rate:", win.getActualFrameRate())
 	__end__
