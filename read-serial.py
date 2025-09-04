@@ -15,7 +15,7 @@ def getComPort(deviceName:str):
     return json.loads(subprocess.getoutput(powershellCmd))['FriendlyName'].split('(')[-1].rstrip(')')
 
 
-def capture(logger):
+def capture(logger, filterString = None):
     # Create the output file
         # current_datetime = str(datetime.now().strftime("%Y%m%d-%H%M%S"))
         # file_name = current_datetime+".txt"
@@ -33,13 +33,25 @@ def capture(logger):
         serialString =serialPort.readline()
         try:
             #print(serialString.decode('ascii'))
-            logger.info(f"{serialString.decode('ascii')}")
+            devout = serialString.decode('ascii')
+            parsed = devout.split('#')[1].split(' ')[2]
+            if filterString:
+                filtered = [item for item in parsed if item.__contains__(filterString)]
+                ##logger.info(filtered[0] if filtered else None)
+                logger.info(filtered)
+            else:
+                logger.info(devout)
         except:
             pass
     
 
 
 if __name__ == "__main__":
+    farg = None
+    if sys.argv[1]:
+        farg = str(sys.argv[1])
+        print(f"Filterargument specified: {farg}")
+
     curdate = datetime.today().strftime('%Y-%m-%d-%H-%M-%S')
     logfolder = f"{os.environ['userprofile']}\\Desktop\\"
     logfilenm = f"{curdate}.log"
@@ -56,6 +68,6 @@ if __name__ == "__main__":
     
     logger = logging.getLogger('curdate')
 
-    capture(logger)
+    capture(logger,farg)
 
 
