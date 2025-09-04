@@ -16,14 +16,6 @@ def getComPort(deviceName:str):
 
 
 def capture(logger, filterString = None):
-    # Create the output file
-        # current_datetime = str(datetime.now().strftime("%Y%m%d-%H%M%S"))
-        # file_name = current_datetime+".txt"
-        # file = open(current_datetime, 'w')
-        # print("File created : ", file_name)
-        # file.close()
-    # Find and start reading from the port
-
     print('capture started')
     serialPort = serial.Serial(
         port=getComPort("Silicon Labs"), baudrate=57600*2, bytesize=8, timeout=10, stopbits=serial.STOPBITS_ONE, parity='N'
@@ -34,11 +26,10 @@ def capture(logger, filterString = None):
         try:
             #print(serialString.decode('ascii'))
             devout = serialString.decode('ascii')
-            parsed = devout.split('#')[1].split(' ')[2]
+            parsed = devout.split('#')[1].split(' ')
             if filterString:
                 filtered = [item for item in parsed if item.__contains__(filterString)]
-                ##logger.info(filtered[0] if filtered else None)
-                logger.info(filtered)
+                if filtered: logger.info(filtered[0])
             else:
                 logger.info(devout)
         except:
@@ -48,7 +39,7 @@ def capture(logger, filterString = None):
 
 if __name__ == "__main__":
     farg = None
-    if sys.argv[1]:
+    if len(sys.argv) > 1:
         farg = str(sys.argv[1])
         print(f"Filterargument specified: {farg}")
 
