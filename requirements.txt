@@ -1,2 +1,2 @@
 pyserial==3.5
-streamlit==1.45.1
+#streamlit==1.45.1
