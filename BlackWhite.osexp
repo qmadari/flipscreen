@@ -27,7 +27,7 @@ set font_italic False
 set font_family mono
 set font_bold False
 set expyriment_opengl yes
-set experiment_path "C:\\Users\\TO3\\Desktop\\flipscreen-main"
+set experiment_path "C:/Users/TO3/Desktop/labcode/flipscreen"
 set disable_garbage_collection False
 set description "The main experiment item"
 set color_backend psycho
@@ -73,7 +73,6 @@ define inline_script new_inline_script
 	canvas2 = Canvas()
 	canvas2.rect(-960, -540, 1920, 1080, fill=True, color = 'white')
 	
-	timing = 3
 	
 	a = b = 0
 	

@@ -4,6 +4,11 @@ from datetime import datetime
 import logging
 import os, sys
 
+# stats
+import numpy as np
+import pandas as pd
+
+
 def getComPort(deviceName:str):
     powershellCmdPart1 = "PowerShell -Command \"& {Get-PnpDevice | " 
     powershellCmdPart2 = "Where-Object {$_.FriendlyName -Like '*(COM*'} | Where-Object {$_.Status -Like '*OK*'} | " 
@@ -15,21 +20,46 @@ def getComPort(deviceName:str):
     return json.loads(subprocess.getoutput(powershellCmd))['FriendlyName'].split('(')[-1].rstrip(')')
 
 
+def parse2record(parsedSerial):
+    found = [str(item).replace(';','').split('=')[0] for item in parsedSerial]
+    record = dict([(key,float(value)) for [key,value] in found])
+
+    # searchstrings = ['rA2rA','rA2fA','fA2rA','fA2fA', #A
+    #                  'rB2rB','rB2fB','fB2rB','fB2fB', #B
+    #                  'rA2rB','rA2fB','fA2rB','fA2fB', #A -> B
+    #                  't_dark','t_light',              #Light & dark labels
+    #                 ]
+
+    return record
+    
+def descriptives(a):
+    
+    pd.DataFrame(a)
+
+
 def capture(logger, filterString = None):
-    print('capture started')
+    print('prepping data array')
+
+
+    print('connecting to Flipscreen device')
     serialPort = serial.Serial(
         port=getComPort("Silicon Labs"), baudrate=57600*2, bytesize=8, timeout=10, stopbits=serial.STOPBITS_ONE, parity='N'
     )
+
+    print('capture started')
+    
+
     serialString = ""  # Used to hold data coming over UART
     while 1:
         serialString =serialPort.readline()
         try:
-            #print(serialString.decode('ascii'))
             devout = serialString.decode('ascii')
-            parsed = devout.split('#')[1].split(' ')
+            parsedSerial = devout.split('#')[1].split(' ')
+            record = parse2record(parsedSerial)
+            
+
             if filterString:
-                filtered = [item for item in parsed if item.__contains__(filterString)]
-                if filtered: logger.info(filtered[0])
+                if filterString in record: logger.info(f'{filterString}: {record['filterString']}') 
             else:
                 logger.info(devout)
         except:
@@ -38,27 +68,32 @@ def capture(logger, filterString = None):
 
 
 if __name__ == "__main__":
+
+    # Input argument handle
     farg = None
     if len(sys.argv) > 1:
         farg = str(sys.argv[1])
         print(f"Filterargument specified: {farg}")
 
+
+    # Log
+    # - Path and name
     curdate = datetime.today().strftime('%Y-%m-%d-%H-%M-%S')
     logfolder = f"{os.environ['userprofile']}\\Desktop\\"
     logfilenm = f"{curdate}.log"
     logpath = f"{logfolder}{logfilenm}"
 
+    # - Config
     loglevel = logging.INFO
     logformat = f"%(asctime)s - %(message)s"
     stdout_handler = logging.StreamHandler(stream=sys.stdout) # Writes to terminal too, not just logfile
     file_handler = logging.FileHandler(filename=logpath)
     handlers = [file_handler, stdout_handler]
-
-
-    logging.basicConfig(encoding='utf-8', level = loglevel, format=logformat, datefmt='%m/%d/%Y %I:%M:%S %p',handlers=handlers)
-    
+    logging.basicConfig(encoding='utf-8', level = loglevel, format=logformat, datefmt='%m/%d/%Y %I:%M:%S %p', handlers=handlers)
     logger = logging.getLogger('curdate')
 
+
+    # Start capture procedure
     capture(logger,farg)
 
 
