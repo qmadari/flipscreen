@@ -1,2 +1,4 @@
 pyserial==3.5
+numpy
+pandas
 #streamlit==1.45.1
