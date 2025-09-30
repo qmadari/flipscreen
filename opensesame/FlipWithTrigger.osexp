@@ -27,7 +27,7 @@ set font_italic False
 set font_family mono
 set font_bold False
 set expyriment_opengl yes
-set experiment_path "C:/Users/CemreProject/Desktop/flipscreen"
+set experiment_path "C:/Users/cemreproject/Desktop/flipscreen"
 set disable_garbage_collection False
 set description "The main experiment item"
 set color_backend psycho
@@ -92,7 +92,9 @@ define inline_script new_inline_script
 	)
 	
 	win = exp.window
-	
+	print('XXXXXXXXXXXXX')
+	print(win.useFBO)
+	print('XXXXXXXXXXXXX')
 	canvas1 = Canvas()
 	canvas1.rect(-960, -540, 1920, 1080, fill=True, color = 'black')
 	
@@ -100,7 +102,7 @@ define inline_script new_inline_script
 	canvas2.rect(-960, -540, 1920, 1080, fill=True, color = 'white')
 	
 	timing = 3
-	n_cycles = 2000
+	n_cycles = 20
 	
 	
 	## Keyboard 
