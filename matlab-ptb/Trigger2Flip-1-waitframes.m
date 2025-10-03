@@ -5,7 +5,7 @@ close all;
 clear;
 
 delete(serialportfind);
-[~,detectedb]=system('python C:\PROGS\detectbiosemiserial.py');
+[~,detectedb]=system('python detectbiosemiserial.py');
 comport=['COM' (num2str(sscanf(detectedb,'COM%d')))];
 baudrate=115200;
 biosemitriggerinterface = serialport(comport,115200); % writing uint8 a = little endian byte 1 
