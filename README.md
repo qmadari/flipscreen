@@ -2,6 +2,8 @@
 
 Program to read out and log output from the Flipscreen device (FGB TO3 VU Amsterdam). The Flipscreen device is an amplified photodiode powered by a microcontroller connected via serial port. 
 
+This repository focuses on the software, instructions on how to install the device can be found in this readme under the section Driver Installation.
+
 ## Photodiode
 The photodiode registeres time between exposure to dark and light, determined by a set threshold. When used in combination with a program that flips the screen from black to white or vice versa (a clear distinction between light and dark) this yields time intervals accurate up to a tenth of a millisecond. Keep in mind, when brightness of the screen is set too low, no distinction between light and dark can be made.
 
@@ -86,5 +88,27 @@ Common pitfalls:
 - Screen refresh rate setting (note if the monitors don't have the exact same refresh rate)
 - Nvidia or other GPU driver settings, importantly V-Sync. Having it always On seems to be good.
 
+## Driver installation
+The Flipscreen requires the microcontroller's driver to be installed before it will be detected by Windows. To do so, get the driver by searching for:
+ - `CP210x_Universal_Windows_Driver`
+Or by navigating to:
+ - [https://www.silabs.com/software-and-tools/usb-to-uart-bridge-vcp-drivers?tab=downloads](https://www.silabs.com/software-and-tools/usb-to-uart-bridge-vcp-drivers?tab=downloads)
+
+The latest universal windows driver will suffice. Download and extract this to a convenient path (e.g. Downloads or Desktop)
+
+Installation of the driver has to be done manually. 
+1. Ensure you've downloaded and extracted the driver to a convenient path
+2. Connect the device's USB to the PC
+3. Find the device in the windows Device Manager
+  a. Should be visible under the LTP/COM devices. A device with a warning symbol and titled like CP210x
+  b. Right click on the device and open the properties window.
+  c. Find the "Update or install the driver" option and start the wizard.
+  d. When prompted, choose the "Find driver on this computer" option.
+  e. Navigate to the driver folder that we just extracted. No need to choose any subfolder in there, just the main extracted folder.
+  f. Continue, wait until the wizard has finished the installation.
+  g. You'll notice the driver has succesfully installed when the Device Manager window refreshes itsekf and shows the device with a proper name and without warning symbol.
+4. Remove the downloaded driver / extracted driver folders.
+
+The Flipscreen doesn't need to be reconnected. It now should have obtained a valid COM identifier, and will be recognized by this PC in the future.
 
 
