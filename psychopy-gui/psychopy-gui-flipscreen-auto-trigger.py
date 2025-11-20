@@ -15,33 +15,55 @@ Flipscreen Automatic Trigger Sender for Psychopy GUI
 
 Brief usage comment:
 --------------
-# Import
-from psychopy_gui_flipscreen_auto_trigger import FlipscreenAutoTriggerPsychopyGui, loggingConfig
-import serial
-# loggingConfig is optional, use if logging is desired and matches your use case
-# optionally also import getComPort for simpler EEG interface detection.
+##-- Import statements
 
-# Setup
-logger = loggingConfig() # optional
+import serial
+from psychopy_gui_flipscreen_auto_trigger import FlipscreenAutoTriggerPsychopyGui
+from psychopy_gui_flipscreen_auto_trigger import loggingConfig  #  optional 
+
+# ... loggingConfig is optional, use if logging is desired and matches your use case ...
+# ... optionally also import getComPort for simpler EEG interface detection ...
+
+#-- Setup
+# ... Create flipscreen auto trigger object with defautl values ...
+flipscreen = FlipscreenAutoTriggerPsychopyGui()
+
+# ... Complete customizable argument list ...
+flipscreen = FlipscreenAutoTriggerPsychopyGui(flipScreenCom=None, eegCom=None, overrideTrig=None, openTrig=111, closeTrig=122, baud=115200, logger=None)
+
+# ... Optional logger enabled variant ...
+logger = loggingConfig() 
 flipscreen = FlipscreenAutoTriggerPsychopyGui(logger=logger) 
 
-# Phase 1: Manual triggers in your experiment script
+
+#-- Phase 1: Manual triggers in your experiment script
 eeg_port = serial.Serial('COM4', baudrate=115200) 
 eeg_port.write(bytes([10]))  # Send trigger 10
 eeg_port.flush()
-# ... more manual triggers ...
+# ... more manually sent triggers ...
 eeg_port.close()  # IMPORTANT: When switching to Flipscreen auto-triggers, 
                   # close port before starting Flipscreen
 
-# Phase 2: Automatic Flipscreen triggers
+#-- Phase 2: Automatic Flipscreen triggers
+# ... startThread will connect to the EEG com port and send trig 111 ...
 flipscreen.startThread() 
 # ... show screen stimuli, Flipscreen sends triggers automatically ...
+
+# Optional: Override both triggers to same value at any time
+flipscreen.setOverrideTrigger(99)  # Both light and dark now send 99
+# ... continue experiment ...
+flipscreen.setOverrideTrigger(None)  # Back to normal (144 for light, 155 for dark)
+
+# ... closeThread will close the connection to the EEG com port and send trig 122 ...
 flipscreen.stopThread()  # Closes EEG serial port by itself
 
-# Phase 3: Back to experiment manual triggers
+# ... Custom default trigger values can be set when creating the flipscreen object ...
+
+#-- Phase 3: Back to experiment manual triggers
 eeg_port = serial.Serial('COM4', baudrate=115200) # Reopen EEG serial port for your main script
 eeg_port.write(bytes([20]))  # Send trigger 20
 eeg_port.close()
+
 """
 
 
@@ -56,7 +78,7 @@ def getComPort(deviceName: str):
 ## This is suitable for psychopy gui, serial used instead of pyserial. Other implementations likely will be with pyserial
 class FlipscreenAutoTriggerPsychopyGui:
     
-    def __init__(self, flipScreenCom=None, eegCom=None, baud=115200, logger=None):
+    def __init__(self, flipScreenCom=None, eegCom=None, overrideTrig=None, openTrig=111, closeTrig=122, baud=115200, logger=None):
         self.flipScreenCom = flipScreenCom if flipScreenCom else getComPort("Silicon Labs") # Autodetect Flipscreen
         self.eegCom = eegCom if eegCom else getComPort("Serial Port") # Autodetect EEG AD box
         self.baud = baud
@@ -67,9 +89,25 @@ class FlipscreenAutoTriggerPsychopyGui:
         self.eegSerialPort = None
         
         # Trigger codes
-        self.LIGHT_TRIGGER = 1
-        self.DARK_TRIGGER = 2
+        self.LIGHT_TRIGGER = 144
+        self.DARK_TRIGGER = 155
+        self.OVERRIDE_TRIGGER = overrideTrig
+        self.OPEN_TRIGGER = openTrig
+        self.CLOSE_TRIGGER = closeTrig
     
+    def setOverrideTrigger(self,newOverrideTrig):
+        self.OVERRIDE_TRIGGER = newOverrideTrig
+        if self.logger:
+            if newOverrideTrig is None:
+                self.logger.info("Override disabled - reverting to normal triggers")
+            else:
+                self.logger.info(f"Override enabled - all triggers now: {newOverrideTrig}")
+        else:
+            if newOverrideTrig is None:
+                print("Override disabled - reverting to normal triggers")
+            else:
+                print(f"Override enabled - all triggers now: {newOverrideTrig}")
+
     def startThread(self):
         self.running = True
         self.thread = threading.Thread(target=self._readFlipScreen, daemon=True)
@@ -94,6 +132,7 @@ class FlipscreenAutoTriggerPsychopyGui:
         self.eegSerialPort = None
         try:
             self.eegSerialPort = serial.Serial(self.eegCom, baudrate=self.baud, timeout=0.01)
+            self.sendTrig(self.OPEN_TRIGGER)
         except Exception as e:
             if self.logger:
                 self.logger.error(f"Failed to open EEG port {self.eegCom}: {e}")
@@ -102,6 +141,7 @@ class FlipscreenAutoTriggerPsychopyGui:
 
     def closeEEGPort(self):
         if self.eegSerialPort and self.eegSerialPort.is_open:
+            self.sendTrig(self.CLOSE_TRIGGER)
             self.eegSerialPort.close()
 
     def sendTrig(self,code):
@@ -127,6 +167,12 @@ class FlipscreenAutoTriggerPsychopyGui:
     def _readFlipScreen(self):
         flipScreenSerialPort = None
         self.connectEEGPort()
+
+        # Local trigger values (can be overridden during runtime)
+        lightTrig = self.LIGHT_TRIGGER
+        darkTrig = self.DARK_TRIGGER
+        override = False
+
         try:
             flipScreenSerialPort = serial.Serial(port=self.flipScreenCom, baudrate=self.baud, bytesize=8, timeout=0.1, stopbits=serial.STOPBITS_ONE, parity='N')
             
@@ -137,20 +183,31 @@ class FlipscreenAutoTriggerPsychopyGui:
             
             while self.running:
                 try:
+                    if self.OVERRIDE_TRIGGER and darkTrig != self.OVERRIDE_TRIGGER:
+                        # override has just been enabled
+                        override = True
+                        lightTrig = self.OVERRIDE_TRIGGER
+                        darkTrig = self.OVERRIDE_TRIGGER 
+                    if (not self.OVERRIDE_TRIGGER) and override:
+                        # override has just been disabled
+                        override = False
+                        lightTrig = self.LIGHT_TRIGGER
+                        darkTrig = self.DARK_TRIGGER
+
                     serialString = flipScreenSerialPort.readline()
                     if not serialString:
                         continue
 
                     devout = serialString.decode('ascii').strip()
                     if '#light=' in devout:
-                        self.sendTrig(self.LIGHT_TRIGGER)
+                        self.sendTrig(lightTrig)
                         if self.logger:
                             self.logger.info(f"Flipscreen: {devout}")
                         else:
                             print(f"Flipscreen: {devout}")
                     
                     elif '#dark=' in devout:
-                        self.sendTrig(self.DARK_TRIGGER)
+                        self.sendTrig(darkTrig)
                         if self.logger:
                             self.logger.info(f"Flipscreen: {devout}")
                         else:
@@ -178,7 +235,7 @@ class FlipscreenAutoTriggerPsychopyGui:
 def loggingConfig():
     curdate = datetime.today().strftime('%Y-%m-%d-%H-%M-%S')
     logfolder = f"{os.environ['userprofile']}\\Desktop\\"
-    logfilenm = f"flipscreen_{curdate}.log"
+    logfilenm = f"FlipscreenAutoTrig_{curdate}.log"
     logpath = f"{logfolder}{logfilenm}"
     
     loglevel = logging.INFO
@@ -202,8 +259,8 @@ def loggingConfig():
 
 def main():
     logger = loggingConfig()
-    logger.info("[--Flipscreen Trigger Sender Thread Starting--]")
-    logger.info("[--For use with Psychopy GUI--]")
+    logger.info("[  Flipscreen Trigger Sender Thread Starting  ]")
+    logger.info("[  For use with Psychopy GUI  ]")
     
     flipscreenTriggerSender = FlipscreenAutoTriggerPsychopyGui(logger=logger)
     flipscreenTriggerSender.startThread()
@@ -211,13 +268,25 @@ def main():
     logger.info("Thread running. Press Ctrl+C to stop.")
     
     try:
+        ## Simulating experiment
+        time.sleep(5)
+
+        ## Override default light and dark triggers
+        flipscreenTriggerSender.setOverrideTrigger(99)
+        
+        ## More experiment
+        time.sleep(5)
+
+        ## Restore normal light dark triggers, disable override
+        flipscreenTriggerSender.setOverrideTrigger(None)
+
         ## Experiment sleeping forever
         while True:
             time.sleep(1)
     except KeyboardInterrupt:
-        logger.info("\n[--Shutting down--]")
+        logger.info("\n[  Shutting down  ]")
         flipscreenTriggerSender.stopThread()
-        logger.info("[--Flipscreen Trigger program stopped cleanly--]")
+        logger.info("[  Flipscreen Trigger program stopped gracefully  ]")
 
 
 if __name__ == "__main__":
