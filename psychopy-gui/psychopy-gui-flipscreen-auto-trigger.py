@@ -199,14 +199,14 @@ class FlipscreenAutoTriggerPsychopyGui:
                         continue
 
                     devout = serialString.decode('ascii').strip()
-                    if '#light=' in devout:
+                    if '#t_light=' in devout:
                         self.sendTrig(lightTrig)
                         if self.logger:
                             self.logger.info(f"Flipscreen: {devout}")
                         else:
                             print(f"Flipscreen: {devout}")
                     
-                    elif '#dark=' in devout:
+                    elif '#t_dark=' in devout:
                         self.sendTrig(darkTrig)
                         if self.logger:
                             self.logger.info(f"Flipscreen: {devout}")
